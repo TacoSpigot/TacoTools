@@ -60,7 +60,7 @@ import org.eclipse.jgit.revwalk.RevCommit;
 public class Builder
 {
 
-    public static final String LOG_FILE = "BuildTools.log.txt";
+    public static final String LOG_FILE = "PaperTools.log.txt"; // PaperSpigot
     public static final boolean IS_WINDOWS = System.getProperty( "os.name" ).startsWith( "Windows" );
     public static final File CWD = new File( "." );
     private static boolean dontUpdate;
@@ -68,6 +68,7 @@ public class Builder
     private static boolean generateSource;
     private static boolean generateDocs;
     private static boolean dev;
+    private static boolean skipBCB; // PaperSpigot
 
     public static void main(String[] args) throws Exception
     {
@@ -96,6 +97,7 @@ public class Builder
         OptionSpec<Void> generateSourceFlag = parser.accepts( "generate-source" );
         OptionSpec<Void> generateDocsFlag = parser.accepts( "generate-docs" );
         OptionSpec<Void> devFlag = parser.accepts( "dev" );
+        OptionSpec<Void> shouldCompileCBB = parser.accepts( "skip-bukkit" ); // PaperSpigot
         OptionSpec<String> jenkinsVersion = parser.accepts( "rev" ).withRequiredArg().defaultsTo( "latest" );
 
         OptionSet options = parser.parse( args );
@@ -108,7 +110,8 @@ public class Builder
         skipCompile = options.has( skipCompileFlag );
         generateSource = options.has( generateSourceFlag );
         generateDocs = options.has( generateDocsFlag );
-        dev = options.has( devFlag );
+        skipBCB = options.has( shouldCompileCBB ); // PaperSpigot
+        dev = true; // PaperSpigot - Release builds? What are those?
 
         logOutput();
 
@@ -133,7 +136,7 @@ public class Builder
         } catch ( Exception ex )
         {
             System.out.println( "Git name not set, setting it to default value." );
-            runProcess( CWD, "git", "config", "--global", "user.name", "BuildTools" );
+            runProcess( CWD, "git", "config", "--global", "user.name", "PaperTools" ); // PaperSpigot
         }
         try
         {
@@ -141,7 +144,7 @@ public class Builder
         } catch ( Exception ex )
         {
             System.out.println( "Git email not set, setting it to default value." );
-            runProcess( CWD, "git", "config", "--global", "user.email", "unconfigured@null.spigotmc.org" );
+            runProcess( CWD, "git", "config", "--global", "user.email", "unconfigured@null.destroystokyo.com" ); // PaperSpigot
         }
 
         File workDir = new File( "work" );
@@ -150,19 +153,21 @@ public class Builder
         File bukkit = new File( "Bukkit" );
         if ( !bukkit.exists() )
         {
-            clone( "https://hub.spigotmc.org/stash/scm/spigot/bukkit.git", bukkit );
+            clone( "https://hub.spigotmc.org/stash/scm/paper/bukkit.git", bukkit ); // PaperSpigot
         }
 
         File craftBukkit = new File( "CraftBukkit" );
         if ( !craftBukkit.exists() )
         {
-            clone( "https://hub.spigotmc.org/stash/scm/spigot/craftbukkit.git", craftBukkit );
+            clone( "https://hub.spigotmc.org/stash/scm/paper/craftbukkit.git", craftBukkit ); // PaperSpigot
         }
 
-        File spigot = new File( "Spigot" );
-        if ( !spigot.exists() )
+        // PaperSpigot start
+        File paperSpigot = new File( "PaperSpigot" );
+        if ( !paperSpigot.exists() )
         {
-            clone( "https://hub.spigotmc.org/stash/scm/spigot/spigot.git", spigot );
+            clone( "https://hub.spigotmc.org/stash/scm/paper/paperspigot.git", paperSpigot );
+            // PaperSpigot end
         }
 
         File buildData = new File( "BuildData" );
@@ -187,7 +192,7 @@ public class Builder
 
         Git bukkitGit = Git.open( bukkit );
         Git craftBukkitGit = Git.open( craftBukkit );
-        Git spigotGit = Git.open( spigot );
+        Git paperSpigotGit = Git.open( paperSpigot ); // PaperSpigot
         Git buildGit = Git.open( buildData );
 
         BuildInfo buildInfo = new BuildInfo( "Dev Build", "Development", 0, new BuildInfo.Refs( "master", "master", "master", "master" ) );
@@ -224,7 +229,7 @@ public class Builder
             pull( buildGit, buildInfo.getRefs().getBuildData() );
             pull( bukkitGit, buildInfo.getRefs().getBukkit() );
             pull( craftBukkitGit, buildInfo.getRefs().getCraftBukkit() );
-            pull( spigotGit, buildInfo.getRefs().getSpigot() );
+            pull( paperSpigotGit, buildInfo.getRefs().getSpigot() ); // PaperSpigot
         }
 
         VersionInfo versionInfo = new Gson().fromJson(
@@ -354,12 +359,12 @@ public class Builder
 
         FileUtils.moveDirectory( tmpNms, nmsDir );
 
-        File spigotApi = new File( spigot, "Bukkit" );
+        File spigotApi = new File( paperSpigot, "Bukkit" ); // PaperSpigot
         if ( !spigotApi.exists() )
         {
             clone( "file://" + bukkit.getAbsolutePath(), spigotApi );
         }
-        File spigotServer = new File( spigot, "CraftBukkit" );
+        File spigotServer = new File( paperSpigot, "CraftBukkit" ); // PaperSpigot
         if ( !spigotServer.exists() )
         {
             clone( "file://" + craftBukkit.getAbsolutePath(), spigotServer );
@@ -367,7 +372,7 @@ public class Builder
 
         // Git spigotApiGit = Git.open( spigotApi );
         // Git spigotServerGit = Git.open( spigotServer );
-        if ( !skipCompile )
+        if ( !skipCompile && !skipBCB)
         {
             System.out.println( "Compiling Bukkit" );
             runProcess( bukkit, "sh", mvn, "clean", "install" );
@@ -386,28 +391,45 @@ public class Builder
 
         try
         {
-            runProcess( spigot, "bash", "applyPatches.sh" );
-            System.out.println( "*** Spigot patches applied!" );
-            System.out.println( "Compiling Spigot & Spigot-API" );
+            // PaperSpigot start
+            runProcess( paperSpigot, "bash", "applyPatches.sh" );
+            System.out.println( " " );
+            System.out.println( "=========================================" );
+            System.out.println( "  Spigot & PaperSpigot patches applied!  " );
+            if (!skipCompile) { System.out.println( " Compiling PaperSpigot & PaperSpigot-API " ); }
+            System.out.println( "=========================================" );
+            System.out.println( " " );
+            // PaperSpigot end
 
             if ( !skipCompile )
             {
-                runProcess( spigot, "sh", mvn, "clean", "install" );
+                runProcess( paperSpigot, "sh", mvn, "clean", "install" ); // PaperSpigot
             }
         } catch ( Exception ex )
         {
-            System.err.println( "Error compiling Spigot, are you running this jar via msysgit?" );
+            System.err.println( "Error compiling PaperSpigot, are you running this jar via msysgit?" ); // PaperSpigot
             ex.printStackTrace();
             System.exit( 1 );
         }
 
+        // PaperSpigot start - lolno
+        System.out.println( " " );
+        /*
         for ( int i = 0; i < 35; i++ )
         {
             System.out.println( " " );
         }
-        System.out.println( "Success! Everything compiled successfully. Copying final .jar files now." );
-        copyJar( "CraftBukkit/target", "craftbukkit", "craftbukkit-" + versionInfo.getMinecraftVersion() + ".jar" );
-        copyJar( "Spigot/Spigot-Server/target", "spigot", "spigot-" + versionInfo.getMinecraftVersion() + ".jar" );
+        */
+        if (!skipCompile)
+        {
+            System.out.println( "Success! Everything compiled successfully. Copying final .jar files now." );
+            if (!skipBCB) { copyJar( "CraftBukkit/target", "craftbukkit", "craftbukkit-" + versionInfo.getMinecraftVersion() + ".jar" ); }
+            copyJar( "PaperSpigot/PaperSpigot-Server/target", "paperspigot", "paperspigot-" + versionInfo.getMinecraftVersion() + ".jar" ); // PaperSpigot
+        } else
+        {
+            System.out.println( "=== Success! ===" );
+        }
+        // PaperSpigot end
     }
 
     public static final String get(String url) throws IOException
