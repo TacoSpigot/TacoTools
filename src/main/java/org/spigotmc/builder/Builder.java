@@ -111,7 +111,7 @@ public class Builder
         generateSource = options.has( generateSourceFlag );
         generateDocs = options.has( generateDocsFlag );
         skipBCB = options.has( shouldCompileCBB ); // PaperSpigot
-        dev = true; // PaperSpigot - Release builds? What are those?
+        dev = !( options.has( jenkinsVersion ) ); // PaperSpigot - 1.8 rev workaround I'm not really happy with
 
         logOutput();
 
@@ -207,7 +207,7 @@ public class Builder
                 String verInfo;
                 try
                 {
-                    verInfo = get( "https://hub.spigotmc.org/versions/" + askedVersion + ".json" );
+                    verInfo = get( "https://ci.destroystokyo.com/userContent/paperversions/" + askedVersion + ".json" );
                 } catch ( IOException ex )
                 {
                     System.err.println( "Could not get version " + askedVersion + " does it exist? Try another version or use 'latest'" );
