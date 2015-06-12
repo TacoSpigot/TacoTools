@@ -433,7 +433,7 @@ public class Builder
             System.out.println( " " );
         }
         */
-        if (!skipCompile || !skipCopy)
+        if (!skipCompile && !skipCopy)
         {
             System.out.println( "Success! Everything compiled successfully. Copying final .jar files now." );
             if (!skipBCB) { copyJar( "CraftBukkit/target", "craftbukkit", "craftbukkit-" + versionInfo.getMinecraftVersion() + ".jar" ); }
