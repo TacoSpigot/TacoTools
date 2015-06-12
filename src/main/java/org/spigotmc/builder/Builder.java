@@ -69,6 +69,7 @@ public class Builder
     private static boolean generateDocs;
     private static boolean dev;
     private static boolean skipBCB; // PaperSpigot
+    private static boolean skipCopy; // PaperSpigot
 
     public static void main(String[] args) throws Exception
     {
@@ -88,7 +89,7 @@ public class Builder
                 }
             }
         }
-        System.out.println( "Loading BuildTools version: " + buildVersion + " (#" + buildNumber + ")" );
+        System.out.println( "Loading PaperTools version: " + buildVersion + " (#" + buildNumber + ")" ); // PaperSpigot
 
         OptionParser parser = new OptionParser();
         OptionSpec<Void> disableCertFlag = parser.accepts( "disable-certificate-check" );
@@ -98,6 +99,7 @@ public class Builder
         OptionSpec<Void> generateDocsFlag = parser.accepts( "generate-docs" );
         OptionSpec<Void> devFlag = parser.accepts( "dev" );
         OptionSpec<Void> shouldCompileCBB = parser.accepts( "skip-bukkit" ); // PaperSpigot
+        OptionSpec<Void> skipJarCopy = parser.accepts( "skip-copy" ); // PaperSpigot
         OptionSpec<String> jenkinsVersion = parser.accepts( "rev" ).withRequiredArg().defaultsTo( "latest" );
 
         OptionSet options = parser.parse( args );
@@ -110,14 +112,19 @@ public class Builder
         skipCompile = options.has( skipCompileFlag );
         generateSource = options.has( generateSourceFlag );
         generateDocs = options.has( generateDocsFlag );
-        skipBCB = options.has( shouldCompileCBB ); // PaperSpigot
-        dev = !( options.has( jenkinsVersion ) ); // PaperSpigot - 1.8 rev workaround I'm not really happy with
+        // PaperSpigot start
+        skipBCB = options.has( shouldCompileCBB );
+        skipCopy = options.has( skipJarCopy );
+        dev = !( options.has( jenkinsVersion ) );// Revisions workaround I'm not really happy with
+        // PaperSpigot end
 
         logOutput();
 
-        if ( Float.parseFloat( System.getProperty( "java.class.version" ) ) < 51.0 )
+        if ( Float.parseFloat( System.getProperty( "java.class.version" ) ) < 52.0 )
         {
-            System.err.println( "*** WARNING *** You are not using Java 7 or above. Although this will work, it is highly discouraged due to the security issues present." );
+            /* PaperSpigot - Bump to Java 8 - although we aren't aware of any uber security issues afflicting the last java 7 builds
+             * we should still advise users to use a supported version, because its java and they'll probably find one/some */
+            System.err.println( "*** WARNING *** You are not using Java 8 or above. Although this will work, it is not advised due to the potential security issues present" );
             System.err.println( "*** WARNING *** Use java -version to check your version and update as soon as possible." );
         }
 
@@ -227,7 +234,7 @@ public class Builder
 
                 if ( buildNumber != -1 && buildInfo.getToolsVersion() != -1 && buildNumber < buildInfo.getToolsVersion() )
                 {
-                    System.err.println( "**** Your BuildTools is out of date and will not build the requested version. Please grab a new copy from http://www.spigotmc.org/" );
+                    System.err.println( "**** Your PaperTools is out of date and will not build the requested version. Please grab a new copy from https://ci.destroystokyo.com/" ); // PaperSpigot
                     System.exit( 1 );
                 }
             }
@@ -426,7 +433,7 @@ public class Builder
             System.out.println( " " );
         }
         */
-        if (!skipCompile)
+        if (!skipCompile || !skipCopy)
         {
             System.out.println( "Success! Everything compiled successfully. Copying final .jar files now." );
             if (!skipBCB) { copyJar( "CraftBukkit/target", "craftbukkit", "craftbukkit-" + versionInfo.getMinecraftVersion() + ".jar" ); }
