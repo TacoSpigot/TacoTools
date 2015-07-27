@@ -180,7 +180,7 @@ public class Builder
         File buildData = new File( "BuildData" );
         if ( !buildData.exists() )
         {
-            clone( "https://hub.spigotmc.org/stash/scm/spigot/builddata.git", buildData );
+            clone( "https://hub.spigotmc.org/stash/scm/paper/builddata.git", buildData );
         }
 
         File maven;
