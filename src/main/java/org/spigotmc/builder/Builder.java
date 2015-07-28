@@ -60,7 +60,7 @@ import org.eclipse.jgit.revwalk.RevCommit;
 public class Builder
 {
 
-    public static final String LOG_FILE = "PaperTools.log.txt"; // PaperSpigot
+    public static final String LOG_FILE = "TacoTools.log.txt"; // TacoSpigot
     public static final boolean IS_WINDOWS = System.getProperty( "os.name" ).startsWith( "Windows" );
     public static final File CWD = new File( "." );
     private static boolean dontUpdate;
@@ -89,7 +89,7 @@ public class Builder
                 }
             }
         }
-        System.out.println( "Loading PaperTools version: " + buildVersion + " (#" + buildNumber + ")" ); // PaperSpigot
+        System.out.println( "Loading TacoTools version: " + buildVersion + " (#" + buildNumber + ")" ); // TacoSpigot
 
         OptionParser parser = new OptionParser();
         OptionSpec<Void> disableCertFlag = parser.accepts( "disable-certificate-check" );
@@ -100,7 +100,7 @@ public class Builder
         OptionSpec<Void> devFlag = parser.accepts( "dev" );
         OptionSpec<Void> shouldCompileCBB = parser.accepts( "skip-bukkit" ); // PaperSpigot
         OptionSpec<Void> skipJarCopy = parser.accepts( "skip-copy" ); // PaperSpigot
-        OptionSpec<String> jenkinsVersion = parser.accepts( "rev" ).withRequiredArg().defaultsTo( "latest" );
+        // OptionSpec<String> jenkinsVersion = parser.accepts( "rev" ).withRequiredArg().defaultsTo( "latest" ); // TacoSpigot - remove version option
 
         OptionSet options = parser.parse( args );
 
@@ -115,7 +115,8 @@ public class Builder
         // PaperSpigot start
         skipBCB = options.has( shouldCompileCBB );
         skipCopy = options.has( skipJarCopy );
-        dev = !( options.has( jenkinsVersion ) );// Revisions workaround I'm not really happy with
+        // TacoSpigot
+        dev = true; /* !( options.has( jenkinsVersion ) ) */;// Revisions workaround I'm not really happy with
         // PaperSpigot end
 
         logOutput();
@@ -143,7 +144,7 @@ public class Builder
         } catch ( Exception ex )
         {
             System.out.println( "Git name not set, setting it to default value." );
-            runProcess( CWD, "git", "config", "--global", "user.name", "PaperTools" ); // PaperSpigot
+            runProcess( CWD, "git", "config", "--global", "user.name", "TacoSpigot" ); // TacoSpigot
         }
         try
         {
@@ -151,7 +152,7 @@ public class Builder
         } catch ( Exception ex )
         {
             System.out.println( "Git email not set, setting it to default value." );
-            runProcess( CWD, "git", "config", "--global", "user.email", "unconfigured@null.destroystokyo.com" ); // PaperSpigot
+            runProcess( CWD, "git", "config", "--global", "user.email", "unconfigured@techcable.net" ); // TacoSpigot
         }
 
         File workDir = new File( "work" );
@@ -160,27 +161,27 @@ public class Builder
         File bukkit = new File( "Bukkit" );
         if ( !bukkit.exists() )
         {
-            clone( "https://hub.spigotmc.org/stash/scm/paper/bukkit.git", bukkit ); // PaperSpigot
+            clone( "https://github.com/TacoSpigot/Bukkit.git", bukkit ); // TacoSpigot
         }
 
         File craftBukkit = new File( "CraftBukkit" );
         if ( !craftBukkit.exists() )
         {
-            clone( "https://hub.spigotmc.org/stash/scm/paper/craftbukkit.git", craftBukkit ); // PaperSpigot
+            clone( "https://github.com/TacoSpigot/CraftBukkit.git", craftBukkit ); // TacoSpigot
         }
 
-        // PaperSpigot start
-        File paperSpigot = new File( "PaperSpigot" );
-        if ( !paperSpigot.exists() )
+        // TacoSpigot start
+        File tacoSpigot = new File( "TacoSpigot" );
+        if ( !tacoSpigot.exists() )
         {
-            clone( "https://hub.spigotmc.org/stash/scm/paper/paperspigot.git", paperSpigot );
-            // PaperSpigot end
+            clone( "https://github.com/TacoSpigot/TacoSpigot.git", tacoSpigot );
+            // TacoSpigot end
         }
 
         File buildData = new File( "BuildData" );
         if ( !buildData.exists() )
         {
-            clone( "https://hub.spigotmc.org/stash/scm/paper/builddata.git", buildData );
+            clone( "https://github.com/TacoSpigot/BuildData.git", buildData ); // TacoSpigot
         }
 
         File maven;
@@ -205,13 +206,15 @@ public class Builder
 
         Git bukkitGit = Git.open( bukkit );
         Git craftBukkitGit = Git.open( craftBukkit );
-        Git paperSpigotGit = Git.open( paperSpigot ); // PaperSpigot
+        Git tacoSpigotGit = Git.open( tacoSpigot ); // TacoSpigot
         Git buildGit = Git.open( buildData );
 
         BuildInfo buildInfo = new BuildInfo( "Dev Build", "Development", 0, new BuildInfo.Refs( "master", "master", "master", "master" ) );
 
         if ( !dontUpdate )
         {
+            // TacoSpigot start - remove the versioning option
+            /*
             if ( !dev )
             {
                 String askedVersion = options.valueOf( jenkinsVersion );
@@ -238,11 +241,12 @@ public class Builder
                     System.exit( 1 );
                 }
             }
+            */
 
             pull( buildGit, buildInfo.getRefs().getBuildData() );
             pull( bukkitGit, buildInfo.getRefs().getBukkit() );
             pull( craftBukkitGit, buildInfo.getRefs().getCraftBukkit() );
-            pull( paperSpigotGit, buildInfo.getRefs().getSpigot() ); // PaperSpigot
+            pull( tacoSpigotGit, buildInfo.getRefs().getSpigot() ); // TacoSpigot
         }
 
         VersionInfo versionInfo = new Gson().fromJson(
@@ -372,12 +376,12 @@ public class Builder
 
         FileUtils.moveDirectory( tmpNms, nmsDir );
 
-        File spigotApi = new File( paperSpigot, "Bukkit" ); // PaperSpigot
+            File spigotApi = new File( tacoSpigot, "Bukkit" ); // TacoSpigot
         if ( !spigotApi.exists() )
         {
             clone( "file://" + bukkit.getAbsolutePath(), spigotApi );
         }
-        File spigotServer = new File( paperSpigot, "CraftBukkit" ); // PaperSpigot
+        File spigotServer = new File( tacoSpigot, "CraftBukkit" ); // TacoSpigot
         if ( !spigotServer.exists() )
         {
             clone( "file://" + craftBukkit.getAbsolutePath(), spigotServer );
@@ -404,23 +408,23 @@ public class Builder
 
         try
         {
-            // PaperSpigot start
-            runProcess( paperSpigot, "bash", "applyPatches.sh" );
+            // TacoSpigot start
+            runProcess( tacoSpigot, "bash", "applyPatches.sh" );
             System.out.println( " " );
             System.out.println( "=========================================" );
-            System.out.println( "  Spigot & PaperSpigot patches applied!  " );
-            if (!skipCompile) { System.out.println( " Compiling PaperSpigot & PaperSpigot-API " ); }
+            System.out.println( "  Spigot, PaperSpigot, and TacoSpigot patches applied!  " );
+            if (!skipCompile) { System.out.println( " Compiling TacoSpigot & TacoSpigot-API " ); }
             System.out.println( "=========================================" );
             System.out.println( " " );
-            // PaperSpigot end
+            // TacoSpigot end
 
             if ( !skipCompile )
             {
-                runProcess( paperSpigot, "sh", mvn, "clean", "install" ); // PaperSpigot
+                runProcess( tacoSpigot, "sh", mvn, "clean", "install" ); // TacoSpigot
             }
         } catch ( Exception ex )
         {
-            System.err.println( "Error compiling PaperSpigot, are you running this jar via msysgit?" ); // PaperSpigot
+            System.err.println( "Error compiling TacoSpigot, are you running this jar via msysgit?" ); // TacoSpigot
             ex.printStackTrace();
             System.exit( 1 );
         }
@@ -437,7 +441,7 @@ public class Builder
         {
             System.out.println( "Success! Everything compiled successfully. Copying final .jar files now." );
             if (!skipBCB) { copyJar( "CraftBukkit/target", "craftbukkit", "craftbukkit-" + versionInfo.getMinecraftVersion() + ".jar" ); }
-            copyJar( "PaperSpigot/PaperSpigot-Server/target", "paperspigot", "paperspigot-" + versionInfo.getMinecraftVersion() + ".jar" ); // PaperSpigot
+            copyJar( "TacoSpigot/TacoSpigot-Server/target", "tacospigot", "server-" + versionInfo.getMinecraftVersion() + ".jar" ); // TacoSpigot
         } else
         {
             System.out.println( "=== Success! ===" );
