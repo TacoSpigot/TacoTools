@@ -441,7 +441,7 @@ public class Builder
         {
             System.out.println( "Success! Everything compiled successfully. Copying final .jar files now." );
             if (!skipBCB) { copyJar( "CraftBukkit/target", "craftbukkit", "craftbukkit-" + versionInfo.getMinecraftVersion() + ".jar" ); }
-            copyJar( "TacoSpigot/TacoSpigot-Server/target", "tacospigot", "server-" + versionInfo.getMinecraftVersion() + ".jar" ); // TacoSpigot
+            copyJar( "TacoSpigot/TacoSpigot-Server/target", "server", "taco-" + versionInfo.getMinecraftVersion() + ".jar" ); // TacoSpigot
         } else
         {
             System.out.println( "=== Success! ===" );
